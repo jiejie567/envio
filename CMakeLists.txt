@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ensemble_vio)
 
-set(CMAKE_CXX_COMPILER "/usr/bin/g++-5")
-set(CMAKE_C_COMPILER "/usr/bin/gcc-5")
-
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
