@@ -46,8 +46,8 @@ class vision_meas {
     
     static void LoadParameters(ros::NodeHandle& n);
 
-    void processStereoImage(const sensor_msgs::ImageConstPtr& img_l,
-      const sensor_msgs::ImageConstPtr& img_r, const cv::Mat& mask);
+    void processRGBDImage(const sensor_msgs::ImageConstPtr& img_l,
+                          const sensor_msgs::ImageConstPtr& img_depth, const cv::Mat& mask);
 
     void processStereoORBImage(const sensor_msgs::ImageConstPtr& img_l,
       const sensor_msgs::ImageConstPtr& img_r, const cv::Mat& mask);

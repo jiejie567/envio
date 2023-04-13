@@ -212,21 +212,23 @@ void vision_meas::LoadParameters(ros::NodeHandle& n) {
 
 }
 
-void vision_meas::processStereoImage(
+void vision_meas::processRGBDImage(
     const sensor_msgs::ImageConstPtr& img_l,
-    const sensor_msgs::ImageConstPtr& img_r,
+    const sensor_msgs::ImageConstPtr& img_depth,
     const cv::Mat& mask) {
 
     // Undistort images
     cv::Mat dimg_l = cv_bridge::toCvCopy(
         img_l, sensor_msgs::image_encodings::MONO8)->image;
-    cv::Mat dimg_r = cv_bridge::toCvCopy(
-        img_r, sensor_msgs::image_encodings::MONO8)->image;
+    // cv::imshow("1",dimg_l);
+    // cv::waitKey(0);
+    cv::Mat dimg_depth = cv_bridge::toCvCopy(
+            img_depth, sensor_msgs::image_encodings::TYPE_32FC1)->image;
 
     cv::remap(dimg_l, uimg_l_, undistort_map1_left_,
         undistort_map2_left_, CV_INTER_LINEAR);
-    cv::remap(dimg_r, uimg_r_, undistort_map1_right_,
-        undistort_map2_right_, CV_INTER_LINEAR);
+//    cv::remap(dimg_depth, uimg_r_, undistort_map1_right_,
+//              undistort_map2_right_, CV_INTER_LINEAR);
 
     // Compute edge map
     cv::Mat dx_uimg_l, dy_uimg_l;
@@ -268,70 +270,81 @@ void vision_meas::processStereoImage(
     std::vector<cv::Point> ui_l;
     cv::findNonZero(mask_edge, ui_l);
     if (ui_l.size() == 0) return;
-
     // Convert interger to double
     cv::Mat(ui_l).convertTo(u_l, cv::Mat(u_l).type());
-
-    // Stereo matching
-    // Opencv LK tracker is more robust to feature-rich environments
-    bool use_lk = true;
-    std::vector<uchar> status_stereo;
-    std::vector<double> d_l, d_r;
-    if (use_lk) {
-
-        // LK tracker
-        std::vector<float> err_static;
-        cv::calcOpticalFlowPyrLK(
-            uimg_l_, uimg_r_, u_l, u_r, status_stereo, err_static,
-            cv::Size(21,21), 3,
-            cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS,
-            20, 0.02));
-
-        // Do ransac
-        std::vector<uchar> status_ransac;
-        if (u_r.size() > 20) {
-            cv::findFundamentalMat(u_l, u_r, cv::FM_RANSAC,
-                ransac_thr_, 0.99, status_ransac);
-        }
-        else {
-            for (int i = 0; i < u_l.size(); i++) status_ransac.push_back(1);
-        }
-
-        for (int j = 0; j < u_l.size(); j ++) {
-            status_stereo[j] = status_stereo[j] && status_ransac[j] &&
-                (err_static[j] < 40.0);
-
-            // Two-view triangulation
-            double dl_j, dr_j;
-            TwoViewTriangulation(u_l[j], u_r[j], dl_j, dr_j);
-            d_l.push_back(dl_j);
-            d_r.push_back(dr_j);
-        }
-    }
-    else {
-        epipolarLineSearch(u_l, u_r, d_l, d_r, status_stereo);
-    }
-
     // Pack features
-    for (int i = 0; i < status_stereo.size(); i++) {
-        if (status_stereo[i] && IsFov(u_r[i])) {
-
-            double parallax_x = u_l[i].x - u_r[i].x;
-            double parallax_y = u_l[i].y - u_r[i].y;
-            double parallax = sqrt(parallax_x*parallax_x
-                + parallax_y*parallax_y);
-
-            if (min_depth_ <= d_l[i] && d_l[i] <= max_depth_ &&
-                min_depth_ <= d_r[i] && d_r[i] <= max_depth_ &&
-                parallax > min_parallax_) {
-                // Save
-                u_l_.push_back(u_l[i]);
-                u_r_.push_back(u_r[i]);
-                depth_l_.push_back(d_l[i]);
-                depth_r_.push_back(d_r[i]);
-            }
+    for (int i = 0; i < ui_l.size(); i++) {
+        auto depth_tmp = dimg_depth.at<float>(u_l[i].y, u_l[i].x)/1000.0;
+        if (min_depth_ <= depth_tmp && depth_tmp <= max_depth_ ) 
+        {
+            u_l_.push_back(u_l[i]);
+            depth_l_.push_back(depth_tmp);
         }
     }
+
+
+
+
+//    // Stereo matching
+//    // Opencv LK tracker is more robust to feature-rich environments
+//    bool use_lk = true;
+//    std::vector<uchar> status_stereo;
+//    std::vector<double> d_l, d_r;
+//    if (use_lk) {
+//
+//        // LK tracker
+//        std::vector<float> err_static;
+//        cv::calcOpticalFlowPyrLK(
+//            uimg_l_, uimg_r_, u_l, u_r, status_stereo, err_static,
+//            cv::Size(21,21), 3,
+//            cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS,
+//            20, 0.02));
+//
+//        // Do ransac
+//        std::vector<uchar> status_ransac;
+//        if (u_r.size() > 20) {
+//            cv::findFundamentalMat(u_l, u_r, cv::FM_RANSAC,
+//                ransac_thr_, 0.99, status_ransac);
+//        }
+//        else {
+//            for (int i = 0; i < u_l.size(); i++) status_ransac.push_back(1);
+//        }
+//
+//        for (int j = 0; j < u_l.size(); j ++) {
+//            status_stereo[j] = status_stereo[j] && status_ransac[j] &&
+//                (err_static[j] < 40.0);
+//
+//            // Two-view triangulation
+//            double dl_j, dr_j;
+//            TwoViewTriangulation(u_l[j], u_r[j], dl_j, dr_j);
+//            d_l.push_back(dl_j);
+//            d_r.push_back(dr_j);
+//        }
+//    }
+//    else {
+//        epipolarLineSearch(u_l, u_r, d_l, d_r, status_stereo);
+//    }
+//
+//    // Pack features
+//    for (int i = 0; i < status_stereo.size(); i++) {
+//        if (status_stereo[i] && IsFov(u_r[i])) {
+//
+//            double parallax_x = u_l[i].x - u_r[i].x;
+//            double parallax_y = u_l[i].y - u_r[i].y;
+//            double parallax = sqrt(parallax_x*parallax_x
+//                + parallax_y*parallax_y);
+//
+//            if (min_depth_ <= d_l[i] && d_l[i] <= max_depth_ &&
+//                min_depth_ <= d_r[i] && d_r[i] <= max_depth_ &&
+//                parallax > min_parallax_) {
+//                // Save
+//                u_l_.push_back(u_l[i]);
+////                u_r_.push_back(u_r[i]);
+//                depth_l_.push_back(d_l[i]);
+////                depth_r_.push_back(d_r[i]);
+//            }
+//        }
+//    }
 }
 
 

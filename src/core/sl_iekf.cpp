@@ -487,9 +487,9 @@ void sl_iekf::initializeFeatures(std::vector<cv::Mat> pyr_uimg,
 
             feature_i.life_time_ = 1;
             feature_i.uv_l_ << u_l[i].x, u_l[i].y;
-            feature_i.uv_r_ << u_r[i].x, u_r[i].y;
+//            feature_i.uv_r_ << u_r[i].x, u_r[i].y;
             feature_i.depth_l_ = d_l[i];
-            feature_i.depth_r_ = d_r[i];
+//            feature_i.depth_r_ = 0;
             for (int yy = 0; yy < max_lvl_; yy++) {
                 double dfactor = pow(2,-yy);
                 
@@ -620,7 +620,7 @@ void sl_iekf::trackFeatures(std::vector<cv::Mat> pyr_uimg,
             V3d uv_r1_h = Kr * uv_r1_n;
 
             photo_map_[j].depth_l_ = Z1;
-            photo_map_[j].depth_r_ = Zr1;
+//            photo_map_[j].depth_r_ = Zr1;
 
             photo_map_[j].intensity_.clear();
             for (int yy = 0; yy < max_lvl_; yy++) {
@@ -635,7 +635,7 @@ void sl_iekf::trackFeatures(std::vector<cv::Mat> pyr_uimg,
             }
             photo_map_[j].life_time_ += 1;
             photo_map_[j].uv_l_ = uv1_h.head<2>();
-            photo_map_[j].uv_r_ = uv_r1_h.head<2>();
+//            photo_map_[j].uv_r_ = uv_r1_h.head<2>();
             photo_map_[j].pg_f_ = pg_f;
         }
         else {
@@ -1181,24 +1181,24 @@ void sl_iekf::publishPoseAndMap(const std_msgs::Header& header,
     cv::Mat bgr_r(uimg_r.size(), CV_8UC3);
 
     cv::cvtColor(uimg_l, bgr_l, CV_GRAY2RGB);
-    cv::cvtColor(uimg_r, bgr_r, CV_GRAY2RGB);
+    // cv::cvtColor(uimg_r, bgr_r, CV_GRAY2RGB);
 
     for (int j = 0; j < photo_map_.size(); j++) {
         cv::Point2f draw_u, draw_ur;
         draw_u.x = photo_map_[j].uv_l_(0,0);
         draw_u.y = photo_map_[j].uv_l_(1,0);
 
-        draw_ur.x = photo_map_[j].uv_r_(0,0);
-        draw_ur.y = photo_map_[j].uv_r_(1,0);
+//        draw_ur.x = photo_map_[j].uv_r_(0,0);
+//        draw_ur.y = photo_map_[j].uv_r_(1,0);
 
         if (photo_map_[j].life_time_ > 2) {
             cv::circle(bgr_l, draw_u, 4, cv::Scalar(0,
                 255.0-255.0*photo_map_[j].depth_l_/draw_max_depth_,
                 255.0*photo_map_[j].depth_l_/draw_max_depth_), -1);
 
-            cv::circle(bgr_r, draw_ur, 4, cv::Scalar(0,
-                255.0-255.0*photo_map_[j].depth_r_/draw_max_depth_,
-                255.0*photo_map_[j].depth_r_/draw_max_depth_), -1);
+//            cv::circle(bgr_r, draw_ur, 4, cv::Scalar(0,
+//                255.0-255.0*photo_map_[j].depth_r_/draw_max_depth_,
+//                255.0*photo_map_[j].depth_r_/draw_max_depth_), -1);
         }
     }
     sensor_msgs::ImagePtr img_l_msg =
