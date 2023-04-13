@@ -15,7 +15,7 @@
         <param name="nx" value="25" type="int"/>
         <param name="ny" value="15" type="int"/>
         <param name="min_depth" value="0.3" type="double"/>
-        <param name="max_depth" value="6" type="double"/>
+        <param name="max_depth" value="8" type="double"/>
         <param name="min_parallax" value="1" type="double"/>
         <param name="ransac_thr" value="1" type="double"/>
 
