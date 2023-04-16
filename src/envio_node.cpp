@@ -99,13 +99,12 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
 
 void depth_callback(const sensor_msgs::ImageConstPtr& caml_img,
     const sensor_msgs::ImageConstPtr& camr_img) {
-    ROS_WARN("depth image received.");
+    // ROS_WARN("depth image received.");
     m_estimator.lock();
     cv::Mat mask = estimator.mask();
     m_estimator.unlock();
     
     nesl::vision_meas vismeas_cur(caml_img->header);
-    std::cout<<"xxx"<<std::endl;    
     ros::Time start_time = ros::Time::now();
     vismeas_cur.processRGBDImage(caml_img, camr_img, mask);
 
@@ -119,7 +118,6 @@ void depth_callback(const sensor_msgs::ImageConstPtr& caml_img,
     con.notify_one();
 
     image_callback_counter++;
-    ROS_WARN("depth image process end.");
 
 }
 

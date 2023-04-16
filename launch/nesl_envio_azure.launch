@@ -8,7 +8,7 @@
 
         <!-- Remapping : put your topics -->
         <remap from="/imu" to="/imu"/>
-        <remap from="/left_image" to="/rgb/image_raw"/>
+        <remap from="/left_image" to="/rgb/image_rect_color"/>
         <remap from="/depth_image" to="/depth_to_rgb/image_raw"/>
 
         <!-- Vision processing parameters -->
