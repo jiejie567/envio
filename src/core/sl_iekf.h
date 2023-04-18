@@ -257,6 +257,10 @@ class sl_iekf {
     ros::Publisher pub_tracking_points_;
     ros::Publisher pub_marg_points_;
     ros::Publisher pub_match0_, pub_match1_;
+    ros::Publisher pub_ba;
+    ros::Publisher pub_v;
+
+
     nav_msgs::Path path_;
 
     void TwoViewTriangulation(const cv::Point2f& pt0,

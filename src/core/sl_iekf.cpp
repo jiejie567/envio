@@ -1021,6 +1021,11 @@ void sl_iekf::registerPub(ros::NodeHandle &n) {
 
     pub_match1_ = n.advertise<sensor_msgs::Image>
         ("/envio_nesl/feature_img1", 1000);
+
+    pub_ba = n.advertise<geometry_msgs::Point>
+        ("/ba", 1000);
+    pub_v = n.advertise<geometry_msgs::Point>
+        ("/v", 1000);
 }
 
 void sl_iekf::publishPoseAndMap(const std_msgs::Header& header,
@@ -1091,6 +1096,18 @@ void sl_iekf::publishPoseAndMap(const std_msgs::Header& header,
     odometry.twist.twist.linear.z = v_body(2,0);
 
     pub_state_.publish(odometry);
+
+    geometry_msgs::Point v;
+    v.x = Xi_.block<3,1>(0,4)[0];
+    v.y = Xi_.block<3,1>(0,4)[1];
+    v.z = Xi_.block<3,1>(0,4)[2];
+    pub_v.publish(v);
+
+    geometry_msgs::Point ba;
+    ba.x = ba_[0];
+    ba.y = ba_[1];
+    ba.z = ba_[2];
+    pub_ba.publish(ba);
 
     // publish path
     geometry_msgs::PoseStamped pose_stamped;
